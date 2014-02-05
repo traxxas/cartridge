@@ -88,7 +88,8 @@ class CategoryAdmin(PageAdmin):
 # provide a single inline for managing the single variation per
 # product.
 variation_fields = ["sku", "num_in_stock", "unit_price",
-                    "sale_price", "sale_from", "sale_to", "image"]
+                    "sale_price", "primary", "pattern", "image"]
+                    #"sale_price", "sale_from", "sale_to", "image"]
 if settings.SHOP_USE_VARIATIONS:
     variation_fields.insert(1, "default")
     variations_max_num = None
