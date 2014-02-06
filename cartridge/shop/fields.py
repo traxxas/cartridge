@@ -21,7 +21,7 @@ class OptionField(CharField):
     """
     def __init__(self, *args, **kwargs):
         kwargs["null"] = True
-        defaults = {"max_length": 50}
+        defaults = {"max_length": 128}
         defaults.update(kwargs)
         super(OptionField, self).__init__(*args, **defaults)
 
