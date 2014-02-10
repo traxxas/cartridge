@@ -220,11 +220,12 @@ class ProductVariation(with_metaclass(ProductVariationMetaclass, Priced)):
     default = models.BooleanField(_("Default"), default=False)
     image = models.ForeignKey("ProductImage", verbose_name=_("Image"),
                               null=True, blank=True, on_delete=models.SET_NULL)
+    _order = models.PositiveIntegerField(_("Order"), null=True)
 
     objects = managers.ProductVariationManager()
 
     class Meta:
-        ordering = ("-default",)
+        ordering = ("-default", "_order")
 
     def __str__(self):
         """
@@ -249,8 +250,11 @@ class ProductVariation(with_metaclass(ProductVariationMetaclass, Priced)):
             self.sku = self.id
             self.save()
 
+
+    @models.permalink
     def get_absolute_url(self):
-        return self.product.get_absolute_url()
+        return ("specific_product", (), {"slug": self.product.slug,
+                                         "sku": self.sku})
 
     def validate_unique(self, *args, **kwargs):
         """
@@ -351,6 +355,7 @@ class Category(Page, RichText):
     class Meta:
         verbose_name = _("Product category")
         verbose_name_plural = _("Product categories")
+        ordering = ('-slug',)
 
     def filters(self):
         """
