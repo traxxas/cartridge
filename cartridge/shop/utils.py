@@ -81,9 +81,9 @@ def recalculate_cart(request):
     billship_handler = handler(settings.SHOP_HANDLER_BILLING_SHIPPING)
     tax_handler = handler(settings.SHOP_HANDLER_TAX)
     try:
-        if request.session["order"]["step"] >= checkout.CHECKOUT_STEP_FIRST:
-            billship_handler(request, None)
-            tax_handler(request, None)
+#        if request.session["order"]["step"] >= checkout.CHECKOUT_STEP_FIRST:
+        billship_handler(request, None)
+        tax_handler(request, None)
     except (checkout.CheckoutError, ValueError, KeyError):
         pass
 
