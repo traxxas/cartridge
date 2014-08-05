@@ -576,7 +576,7 @@ class Cart(models.Model):
         if created:
             item.description = force_text(variation)
             item.unit_price = variation.price()
-            item.url = variation.product.get_absolute_url()
+            item.url = variation.get_absolute_url()
             item.category = [c.slug for c in variation.product.categories.all()][-1]
             image = variation.image
             if image is not None:
