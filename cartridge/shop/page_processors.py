@@ -7,38 +7,8 @@ from mezzanine.pages.page_processors import processor_for
 from mezzanine.utils.views import paginate
 
 from cartridge.shop.models import Category, Product, ProductVariation
-from ornatus.sieve.views import sieve, winnow, active_sieves
 
-
-@processor_for(Category)
-def variant_processor(request, page):
-    """
-    Use ProductVariations to display in the category.
-    Add paging ,sort by db order and filtering by sieves.
-    """
-    settings.use_editable()
-    products = ProductVariation.objects.filter(product__category=page.category
-                                              ).exclude(option1='Green')
-    products = sieve(products.order_by('_order'),
-                     request.GET.get('primary', None),
-                     request.GET.get('pattern', None))
-    primary, pattern = winnow(products)
-    products = paginate(products,
-                        request.GET.get('page', 1),
-                        settings.SHOP_PER_PAGE_CATEGORY,
-                        settings.MAX_PAGING_LINKS)
-    sub_categories = page.category.children.published()
-    child_categories = []#Category.objects.filter(id__in=sub_categories)
-    
-    active = active_sieves(request)
-    # display sieves for these categories
-    cats = ('vegan-ties', 'skinny-vegan-ties')
-    return {'products': products,
-            'sieve_cats': cats, 'sieves': active,
-            'primary': primary, 'pattern': pattern,
-            'child_categories': child_categories}
-
-
+#@processor_for(Category)
 def category_processor(request, page):
     """
     Add paging/sorting to the products for the category.
