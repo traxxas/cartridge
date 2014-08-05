@@ -543,6 +543,14 @@ class Order(models.Model):
     invoice.allow_tags = True
     invoice.short_description = ""
 
+    def _ponum(self):
+        """
+        Return the prefixed PO number.  First PO set by altering
+        the auto_increment on the shop_order table.
+       """
+        return "JJ%s" % str(self.id)
+    ponum = property(_ponum)
+
 
 class Cart(models.Model):
 
@@ -570,6 +578,7 @@ class Cart(models.Model):
             item.description = force_text(variation)
             item.unit_price = variation.price()
             item.url = variation.product.get_absolute_url()
+            item.category = [c.slug for c in variation.product.categories.all()][-1]
             image = variation.image
             if image is not None:
                 item.image = str(image.file)
@@ -601,6 +610,16 @@ class Cart(models.Model):
         ``upsell_products`` and ``calculate_discount``.
         """
         return [item.sku for item in self]
+
+    def ship_type(self):
+        """
+        Return shipping type: tie if any items is a tie or acc if all
+        items are accessories, sale, or peta
+        """
+        for item in self:
+            if item.category in ('vegan-ties', 'skinny-vegan-ties'):
+                return 'tie'
+        return 'acc'
 
     def upsell_products(self):
         """
@@ -668,6 +687,7 @@ class CartItem(SelectedProduct):
     cart = models.ForeignKey("Cart", related_name="items")
     url = CharField(max_length=2000)
     image = CharField(max_length=200, null=True)
+    category = models.SlugField()
 
     def get_absolute_url(self):
         return self.url
