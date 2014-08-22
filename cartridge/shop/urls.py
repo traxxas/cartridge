@@ -8,9 +8,9 @@ from mezzanine.conf import settings
 _slash = "/" if settings.APPEND_SLASH else ""
 
 urlpatterns = patterns("cartridge.shop.views",
-    url("^product/(?P<slug>.*)%s$" % _slash, "product", name="shop_product"),
-    url("^product/(?P<slug>.*)%s#(?P<sku>.*)$" % _slash, "product",
-        name="specific_product"),
+    #url("^product/(?P<slug>.*)%s$" % _slash, "product", name="shop_product"),
+    #url("^product/(?P<slug>.*)%s#(?P<sku>.*)$" % _slash, "product",
+    #    name="specific_product"),
     url("^wishlist%s$" % _slash, "wishlist", name="shop_wishlist"),
     url("^cart%s$" % _slash, "cart", name="shop_cart"),
     url("^checkout%s$" % _slash, "checkout_steps", name="shop_checkout"),
