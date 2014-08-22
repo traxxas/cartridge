@@ -27,7 +27,7 @@ from cartridge.shop.forms import (AddProductForm, CartItemFormSet,
 from cartridge.shop.models import Product, ProductVariation, Order
 from cartridge.shop.utils import recalculate_cart, sign
 
-from ornatus.jaanj.models import GiftCode
+from jaanj.models import GiftCode
 
 
 # Set up checkout handlers.
