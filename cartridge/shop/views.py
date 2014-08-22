@@ -31,7 +31,7 @@ try:
 except (ImportError, SyntaxError):
     pisa = None
 HAS_PDF = pisa is not None
-from ornatus.jaanj.models import GiftCode
+from jaanj.models import GiftCode
 
 
 # Set up checkout handlers.
