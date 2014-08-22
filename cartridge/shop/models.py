@@ -3,6 +3,7 @@ from __future__ import division, unicode_literals
 from future.builtins import str, super
 from future.utils import with_metaclass
 
+import re
 from decimal import Decimal
 from functools import reduce
 from operator import iand, ior
@@ -177,6 +178,7 @@ class ProductImage(Orderable):
         upload_to=upload_to("shop.ProductImage.file", "product"))
     description = CharField(_("Description"), blank=True, max_length=100)
     product = models.ForeignKey("Product", related_name="images")
+    active = models.BooleanField(_("Active?"), default=True)
 
     class Meta:
         verbose_name = _("Image")
@@ -512,7 +514,7 @@ class Order(models.Model):
                 pass
             else:
                 variation.update_stock(item.quantity * -1)
-                variation.product.actions.purchased()
+                #variation.product.actions.purchased()
         if discount_code:
             DiscountCode.objects.active().filter(code=discount_code).update(
                 uses_remaining=models.F('uses_remaining') - 1)
@@ -578,11 +580,11 @@ class Cart(models.Model):
             item.description = force_text(variation)
             item.unit_price = variation.price()
             item.url = variation.get_absolute_url()
-            item.category = [c.slug for c in variation.product.categories.all()][-1]
+            item.category = variation.product.categories.first().slug
             image = variation.image
             if image is not None:
                 item.image = str(image.file)
-            variation.product.actions.added_to_cart()
+            #variation.product.actions.added_to_cart()
         item.quantity += quantity
         item.save()
 
@@ -617,7 +619,8 @@ class Cart(models.Model):
         items are accessories, sale, or peta
         """
         for item in self:
-            if item.category in ('vegan-ties', 'skinny-vegan-ties'):
+            m = re.match(r'^(ties\/vegan)|(ties\/skinny)', item.category)
+            if m:
                 return 'tie'
         return 'acc'
 
@@ -631,7 +634,7 @@ class Cart(models.Model):
         with_cart_excluded = for_cart.exclude(variations__sku__in=self.skus())
         return list(with_cart_excluded.distinct())
 
-    def calculate_discount(self, discount):
+    def calculate_discount(self, discount, shipping):
         """
         Calculates the discount based on the items in a cart, some
         might have the discount, others might not.
@@ -639,7 +642,7 @@ class Cart(models.Model):
         # Discount applies to cart total if not product specific.
         products = discount.all_products()
         if products.count() == 0:
-            return discount.calculate(self.total_price())
+            return discount.calculate(self.total_price() + shipping)
         total = Decimal("0")
         # Create a list of skus in the cart that are applicable to
         # the discount, and total the discount for appllicable items.
@@ -700,7 +703,7 @@ class OrderItem(SelectedProduct):
     order = models.ForeignKey("Order", related_name="items")
 
 
-class ProductAction(models.Model):
+#class ProductAction(models.Model):
     """
     Records an incremental value for an action against a product such
     as adding to cart or purchasing, for sales reporting and
@@ -708,15 +711,15 @@ class ProductAction(models.Model):
     popularity and sales reporting.
     """
 
-    product = models.ForeignKey("Product", related_name="actions")
-    timestamp = models.IntegerField()
-    total_cart = models.IntegerField(default=0)
-    total_purchase = models.IntegerField(default=0)
+#    product = models.ForeignKey("Product", related_name="actions")
+#    timestamp = models.IntegerField()
+#    total_cart = models.IntegerField(default=0)
+#    total_purchase = models.IntegerField(default=0)
 
-    objects = managers.ProductActionManager()
+#    objects = managers.ProductActionManager()
 
-    class Meta:
-        unique_together = ("product", "timestamp")
+#    class Meta:
+#        unique_together = ("product", "timestamp")
 
 
 class Discount(models.Model):
