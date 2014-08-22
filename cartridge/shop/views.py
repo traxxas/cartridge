@@ -25,8 +25,9 @@ from cartridge.shop import checkout
 from cartridge.shop.forms import (AddProductForm, CartItemFormSet,
                                   DiscountForm, OrderForm)
 from cartridge.shop.models import Product, ProductVariation, Order
-from cartridge.shop.models import DiscountCode
 from cartridge.shop.utils import recalculate_cart, sign
+
+from ornatus.jaanj.models import GiftCode
 
 
 # Set up checkout handlers.
@@ -49,6 +50,7 @@ def product(request, slug, template="shop/product.html",
     variations = product.variations.all()
     variations_json = dumps([dict([(f, getattr(v, f))
         for f in fields + ["sku", "image_id"]]) for v in variations])
+    variations_dict = dumps(dict([(sku, dict([(f, getattr(v,f)) for f in fields + ["image_id"]])) for v in variations]))
     to_cart = (request.method == "POST" and
                request.POST.get("add_wishlist") is None)
     initial_data = {}
@@ -79,7 +81,7 @@ def product(request, slug, template="shop/product.html",
         "editable_obj": product,
         "images": product.images.all(),
         "variations": variations,
-        "variations_json": variations_json,
+        "variations_json": variations_json, "variations_sku": variations_dict,
         "has_available_variations": any([v.has_price() for v in variations]),
         "related_products": product.related_products.published(
                                                       for_user=request.user),
@@ -189,7 +191,7 @@ def cart(request, template="shop/cart.html",
     context = {"cart_formset": cart_formset}
     settings.use_editable()
     if (settings.SHOP_DISCOUNT_FIELD_IN_CART and
-        DiscountCode.objects.active().exists()):
+        GiftCode.objects.filter(active=True).exists()):
         context["discount_form"] = discount_form
     return render(request, template, context)
 
@@ -241,8 +243,7 @@ def checkout_steps(request, form_class=OrderForm):
             # such as the credit card fields so that they're never
             # stored anywhere.
             request.session["order"] = dict(form.cleaned_data)
-            sensitive_card_fields = ("card_number", "card_expiry_month",
-                                     "card_expiry_year", "card_ccv")
+            sensitive_card_fields = ("card_number", "card_expiry", "card_ccv")
             for field in sensitive_card_fields:
                 if field in request.session["order"]:
                     del request.session["order"][field]
