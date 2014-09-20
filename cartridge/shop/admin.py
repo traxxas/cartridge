@@ -333,6 +333,6 @@ admin.site.register(Category, CategoryAdmin)
 admin.site.register(Product, ProductAdmin)
 if settings.SHOP_USE_VARIATIONS:
     admin.site.register(ProductOption, ProductOptionAdmin)
-admin.site.register(Order, OrderAdmin)
+#admin.site.register(Order, OrderAdmin)
 admin.site.register(Sale, SaleAdmin)
 admin.site.register(DiscountCode, DiscountCodeAdmin)
