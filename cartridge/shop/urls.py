@@ -18,6 +18,6 @@ urlpatterns = [
         name="shop_complete"),
     url("^invoice/(?P<order_id>\d+)%s$" % _slash, views.invoice,
         name="shop_invoice"),
-    url("^invoice/(?P<order_id>\d+)/resend%s$" % _slash,
-        views.invoice_resend_email, name="shop_invoice_resend"),
+    #url("^invoice/(?P<order_id>\d+)/resend%s$" % _slash,
+    #    views.invoice_resend_email, name="shop_invoice_resend"),
 ]
