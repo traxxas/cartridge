@@ -33,6 +33,7 @@ except (ImportError, SyntaxError):
     pisa = None
 HAS_PDF = pisa is not None
 
+from exhibeo.theme.forms import SendForm
 
 # Set up checkout handlers.
 handler = lambda s: import_dotted_path(s) if s else lambda *args: None
@@ -196,7 +197,7 @@ def cart(request, template="shop/cart.html",
             recalculate_cart(request)
         if valid:
             return redirect("shop_cart")
-    context = {"cart_formset": cart_formset}
+    context = {"cart_formset": cart_formset, "send_form": SendForm()}
     context.update(extra_context or {})
     settings.use_editable()
     if (settings.SHOP_DISCOUNT_FIELD_IN_CART and
