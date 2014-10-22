@@ -27,6 +27,7 @@ from cartridge.shop.models import Product, ProductVariation, Order
 from cartridge.shop.models import DiscountCode
 from cartridge.shop.utils import recalculate_cart, sign
 
+from exhibeo.theme.forms import SendForm
 
 # Set up checkout handlers.
 handler = lambda s: import_dotted_path(s) if s else lambda *args: None
@@ -185,7 +186,7 @@ def cart(request, template="shop/cart.html",
             recalculate_cart(request)
         if valid:
             return redirect("shop_cart")
-    context = {"cart_formset": cart_formset}
+    context = {"cart_formset": cart_formset, "send_form": SendForm()}
     settings.use_editable()
     if (settings.SHOP_DISCOUNT_FIELD_IN_CART and
         DiscountCode.objects.active().exists()):
