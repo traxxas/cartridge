@@ -208,6 +208,7 @@ class ProductOption(models.Model):
     class Meta:
         verbose_name = _("Product option")
         verbose_name_plural = _("Product options")
+        ordering = ['type', 'name']
 
 
 class ProductVariationMetaclass(ModelBase):
@@ -239,7 +240,7 @@ class ProductVariation(with_metaclass(ProductVariationMetaclass, Priced)):
     objects = managers.ProductVariationManager()
 
     class Meta:
-        ordering = ("-default",)
+        ordering = ("-default", "option1", "option2")
 
     def __unicode__(self):
         """
