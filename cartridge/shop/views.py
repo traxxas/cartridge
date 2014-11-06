@@ -27,14 +27,6 @@ from cartridge.shop.models import Product, ProductVariation, Order
 from cartridge.shop.models import DiscountCode
 from cartridge.shop.utils import recalculate_cart, sign
 
-try:
-    from xhtml2pdf import pisa
-except (ImportError, SyntaxError):
-    pisa = None
-HAS_PDF = pisa is not None
-
-from exhibeo.theme.forms import SendForm
-
 # Set up checkout handlers.
 handler = lambda s: import_dotted_path(s) if s else lambda *args: None
 billship_handler = handler(settings.SHOP_HANDLER_BILLING_SHIPPING)
@@ -197,8 +189,7 @@ def cart(request, template="shop/cart.html",
             recalculate_cart(request)
         if valid:
             return redirect("shop_cart")
-    context = {"cart_formset": cart_formset, "send_form": SendForm()}
-    context.update(extra_context or {})
+    context = {"cart_formset": cart_formset}
     settings.use_editable()
     if (settings.SHOP_DISCOUNT_FIELD_IN_CART and
             DiscountCode.objects.active().exists()):
