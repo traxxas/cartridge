@@ -5,6 +5,7 @@ from future.utils import with_metaclass
 from decimal import Decimal
 from functools import reduce
 from operator import iand, ior
+from json import dumps
 
 from django.core.exceptions import ValidationError
 from django.core.urlresolvers import reverse
@@ -572,6 +573,9 @@ class Cart(models.Model):
         item.quantity += quantity
         item.save()
 
+    def to_json(self):
+        return dumps([item.to_dict() for item in self])
+
     def has_items(self):
         """
         Template helper function - does the cart have items?
@@ -647,6 +651,23 @@ class SelectedProduct(models.Model):
 
     def __str__(self):
         return ""
+
+    def to_dict(self):
+        """
+        Make it easier to export Order|CartItems to json object
+        for GA Ecommerce tracking.
+        """
+        try:
+            pv = ProductVariation.objects.get(sku=self.sku)
+        except ProductVariation.DoesNotExist:
+            return {}
+        return {
+            u'id': pv.sku,
+            u'name': pv.product.title,
+            u'category': pv.product.categories.last().title,
+            u'variant': str(pv).split(pv.product.title)[1].strip(),
+            u'price': str(self.unit_price),
+            u'quantity': self.quantity,}
 
     def save(self, *args, **kwargs):
         """
