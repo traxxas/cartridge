@@ -244,8 +244,8 @@ def checkout_steps(request, form_class=OrderForm, extra_context=None):
             # such as the credit card fields so that they're never
             # stored anywhere.
             request.session["order"] = dict(form.cleaned_data)
-            sensitive_card_fields = ("card_number", "card_expiry_month",
-                                     "card_expiry_year", "card_ccv")
+            sensitive_card_fields = ("card_number", "card_expiry",
+                                     "card_ccv")
             for field in sensitive_card_fields:
                 if field in request.session["order"]:
                     del request.session["order"][field]
