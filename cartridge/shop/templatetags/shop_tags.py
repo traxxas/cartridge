@@ -46,7 +46,7 @@ def _order_totals(context):
     """
     if "order" in context:
         for f in ("item_total", "shipping_total", "discount_total",
-                  "tax_total"):
+                  "tax_total", "tax_rate"):
             context[f] = getattr(context["order"], f)
     else:
         context["item_total"] = context["request"].cart.total_price()
@@ -57,7 +57,7 @@ def _order_totals(context):
                 context["shipping_total"] = 0
         else:
             for f in ("shipping_type", "shipping_total", "discount_total",
-                      "tax_type", "tax_total"):
+                      "tax_type", "tax_total", "tax_rate"):
                 context[f] = context["request"].session.get(f, None)
     context["order_total"] = context.get("item_total", None)
     if context.get("shipping_total", None) is not None:
