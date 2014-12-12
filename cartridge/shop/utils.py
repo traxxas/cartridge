@@ -78,7 +78,7 @@ def set_shipping(request, shipping_type, shipping_total):
     request.session["shipping_total"] = _str(shipping_total)
 
 
-def set_tax(request, tax_type, tax_total):
+def set_tax(request, tax_type, tax_total, tax_rate):
     """
     Stores the tax type and total in the session.
     """
