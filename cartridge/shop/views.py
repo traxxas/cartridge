@@ -31,7 +31,7 @@ try:
 except (ImportError, SyntaxError):
     pisa = None
 HAS_PDF = pisa is not None
-from jaanj.models import GiftCode
+from donum.models import GiftCode
 
 
 # Set up checkout handlers.
