@@ -674,6 +674,24 @@ class SelectedProduct(models.Model):
     def __str__(self):
         return ""
 
+    def to_dict(self):
+        """
+        Make it easier to export Order|CartItems to json object for
+        GA Ecommerce tracking
+        """
+        sku = 'JJGiftCard' if 'JJGiftCard' in self.sku else self.sku
+        try:
+            pv = ProductVariation.objects.get(sku=sku)
+        except ProductVariation.DoesNotExist:
+            return {}
+        return {
+            u'id': pv.sku,
+            u'name': pv.product.title,
+            u'category': pv.product.categories.last().title,
+            u'variant': str(pv).split(pv.product.title)[1].strip(),
+            u'price': str(self.unit_price),
+            u'quantity': self.quantity,}
+
     def save(self, *args, **kwargs):
         """
         Set the total price based on the given quantity. If the
