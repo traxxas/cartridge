@@ -545,14 +545,6 @@ class Order(models.Model):
     invoice.allow_tags = True
     invoice.short_description = ""
 
-    def _ponum(self):
-        """
-        Return the prefixed PO number.  First PO set by altering
-        the auto_increment on the shop_order table.
-       """
-        return "JJ%s" % str(self.id)
-    ponum = property(_ponum)
-
 
 class Cart(models.Model):
 
