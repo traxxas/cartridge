@@ -263,6 +263,9 @@ class ProductVariation(with_metaclass(ProductVariationMetaclass, Priced)):
         created.
         """
         super(ProductVariation, self).save(*args, **kwargs)
+        if self.product.slug != self.slug:
+            self.slug = self.product.slug
+            self.save()
         if not self.sku:
             self.sku = self.id
             self.save()
