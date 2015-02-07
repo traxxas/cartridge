@@ -252,11 +252,15 @@ class ProductVariation(with_metaclass(ProductVariationMetaclass, Priced)):
             self.sku = self.id
             self.save()
 
+    def _color_slug(self):
+        return self.image.file.name[8:-9]
+    cslug = property(_color_slug)
+
 
     @models.permalink
     def get_absolute_url(self):
-        return ("specific_product", (), {"slug": self.product.slug,
-                                         "sku": self.sku})
+        return ("specific_product", (), {"slug": self.slug,
+                                         "cslug": self.cslug})
 
     def validate_unique(self, *args, **kwargs):
         """
