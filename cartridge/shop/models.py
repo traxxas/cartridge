@@ -233,14 +233,12 @@ class ProductVariation(with_metaclass(ProductVariationMetaclass, Priced)):
         """
         Display the option names and values for the variation.
         """
-        options = []
-        for field in self.option_fields():
-            name = getattr(self, field.name)
-            if name is not None:
-                option = u"%s: %s" % (field.verbose_name, name)
-                options.append(option)
-        result = u"%s - %s" % (str(self.product), u", ".join(options))
-        return result.strip()
+        options = [str(self.product)]
+        if self.option2 and 'Skinny Cotton Ties' not in options[0]:
+            options.append(self.option2)
+        if self.option1:
+            options.append(u"%s Tipping" % self.option1)
+        return u" - ".join(options).strip()
 
     def save(self, *args, **kwargs):
         """
@@ -686,8 +684,8 @@ class SelectedProduct(models.Model):
         return {
             u'id': pv.sku,
             u'name': pv.product.title,
-            u'category': pv.product.categories.last().title,
-            u'variant': str(pv).split(pv.product.title)[1].strip(),
+            u'category': pv.product.categories.first().title,
+            u'variant': '-'.join(str(pv).split(' - ')[1:]),
             u'price': str(self.unit_price),
             u'quantity': self.quantity,}
 
