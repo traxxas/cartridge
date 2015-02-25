@@ -134,6 +134,7 @@ class CartItemForm(forms.ModelForm):
 
     class Meta:
         model = CartItem
+        fields = ('quantity',)
 
     def clean_quantity(self):
         """
