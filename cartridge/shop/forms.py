@@ -130,10 +130,10 @@ class CartItemForm(forms.ModelForm):
     Model form for each item in the cart - used for the
     ``CartItemFormSet`` below which controls editing the entire cart.
     """
+    quantity = forms.IntegerField(label=_("Quantity"), min_value=0)
 
     class Meta:
         model = CartItem
-        fields = ("quantity",)
 
     def clean_quantity(self):
         """
