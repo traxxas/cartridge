@@ -10,6 +10,7 @@ from django.utils.datastructures import SortedDict
 from django.utils.timezone import now
 
 from mezzanine.conf import settings
+from mezzanine.core.managers import CurrentSiteManager
 
 
 class CartManager(Manager):
@@ -62,7 +63,7 @@ class CartManager(Manager):
         return self.filter(last_updated__lt=self.expiry_time())
 
 
-class OrderManager(Manager):
+class OrderManager(CurrentSiteManager):
 
     def from_request(self, request):
         """

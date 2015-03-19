@@ -1,6 +1,5 @@
 from __future__ import unicode_literals
-from future.builtins import int
-from future.builtins import str
+from future.builtins import int, str
 
 from json import dumps
 
@@ -15,11 +14,15 @@ from django.template.defaultfilters import slugify
 from django.template.loader import get_template
 from django.utils.translation import ugettext as _
 from django.views.decorators.cache import never_cache
-
 from mezzanine.conf import settings
 from mezzanine.utils.importing import import_dotted_path
 from mezzanine.utils.views import render, set_cookie, paginate
 from mezzanine.utils.urls import next_url
+
+try:
+    from xhtml2pdf import pisa
+except (ImportError, SyntaxError):
+    pisa = None
 
 from cartridge.shop import checkout
 from cartridge.shop.forms import (AddProductForm, CartItemFormSet,
@@ -76,6 +79,9 @@ def product(request, slug, template="shop/product.html",
                 response = redirect("shop_wishlist")
                 set_cookie(response, "wishlist", ",".join(skus))
                 return response
+    related = []
+    if settings.SHOP_USE_RELATED_PRODUCTS:
+        related = product.related_products.published(for_user=request.user)
     context = {
         "product": product,
         "editable_obj": product,
@@ -83,8 +89,7 @@ def product(request, slug, template="shop/product.html",
         "variations": variations,
         "variations_json": variations_json, "variations_sku": variations_dict,
         "has_available_variations": any([v.has_price() for v in variations]),
-        "related_products": product.related_products.published(
-                                                      for_user=request.user),
+        "related_products": related,
         "add_product_form": add_product_form
     }
     templates = [u"shop/%s.html" % str(product.slug), template]
@@ -345,7 +350,7 @@ def complete(request, template="shop/complete.html"):
         names[variation.sku] = variation.product.title
     for i, item in enumerate(items):
         setattr(items[i], "name", names[item.sku])
-    context = {"order": order, "items": items,
+    context = {"order": order, "items": items, "has_pdf": pisa is not None,
                "steps": checkout.CHECKOUT_STEPS}
     return render(request, template, context)
 
@@ -369,8 +374,7 @@ def invoice(request, order_id, template="shop/order_invoice.html",
         name = slugify("%s-invoice-%s" % (settings.SITE_TITLE, order.id))
         response["Content-Disposition"] = "attachment; filename=%s.pdf" % name
         html = get_template(template_pdf).render(context)
-        import ho.pisa
-        ho.pisa.CreatePDF(html, response)
+        pisa.CreatePDF(html, response)
         return response
     return render(request, template, context)
 

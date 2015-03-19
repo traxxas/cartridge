@@ -1,6 +1,5 @@
-from __future__ import absolute_import
-from __future__ import unicode_literals
-from future.builtins import bytes, zip
+from __future__ import absolute_import, unicode_literals
+from future.builtins import bytes, zip, str as _str
 
 import hmac
 from locale import setlocale, LC_MONETARY
@@ -60,6 +59,18 @@ def make_choices(choices):
     return list(zip(choices, choices))
 
 
+def clear_session(request, *names):
+    """
+    Removes values for the given session variables names
+    if they exist.
+    """
+    for name in names:
+        try:
+            del request.session[name]
+        except KeyError:
+            pass
+
+
 def recalculate_cart(request):
     """
     Updates an existing discount code, shipping, and tax when the
@@ -73,6 +84,10 @@ def recalculate_cart(request):
     request.cart = Cart.objects.from_request(request)
     discount_code = request.session.get("discount_code", "")
     if discount_code:
+        # Clear out any previously defined discount code
+        # session vars.
+        names = ("free_shipping", "discount_code", "discount_total")
+        clear_session(request, *names)
         discount_form = DiscountForm(request, {"discount_code": discount_code})
         if discount_form.is_valid():
             discount_form.set_discount()
@@ -92,18 +107,16 @@ def set_shipping(request, shipping_type, shipping_total):
     """
     Stores the shipping type and total in the session.
     """
-    from future.builtins import str
-    request.session["shipping_type"] = str(shipping_type)
-    request.session["shipping_total"] = shipping_total
+    request.session["shipping_type"] = _str(shipping_type)
+    request.session["shipping_total"] = _str(shipping_total)
 
 
 def set_tax(request, tax_type, tax_total):
     """
     Stores the tax type and total in the session.
     """
-    from future.builtins import str
-    request.session["tax_type"] = str(tax_type)
-    request.session["tax_total"] = tax_total
+    request.session["tax_type"] = _str(tax_type)
+    request.session["tax_total"] = _str(tax_total)
 
 
 def sign(value):

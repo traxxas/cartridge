@@ -9,14 +9,14 @@ from functools import reduce
 from operator import iand, ior
 
 from django.core.urlresolvers import reverse
-from django.db import models
+from django.db import models, connection
 from django.db.models.signals import m2m_changed
 from django.db.models import CharField, Q
 from django.db.models.base import ModelBase
-from django.db.utils import DatabaseError
 from django.dispatch import receiver
 from django.utils.timezone import now
-from django.utils.translation import ugettext, ugettext_lazy as _
+from django.utils.translation import (ugettext, ugettext_lazy as _,
+                                      pgettext_lazy as __)
 
 try:
     from django.utils.encoding import force_text
@@ -24,24 +24,16 @@ except ImportError:
     # Backward compatibility for Py2 and Django < 1.5
     from django.utils.encoding import force_unicode as force_text
 
-try:
-    from _mysql_exceptions import OperationalError
-except ImportError:
-    class OperationalError(Exception):
-        """
-        This class is purely to prevent a NameError if
-        _mysql_exceptions.OperationalError is not available.
-        """
-
 from mezzanine.conf import settings
 from mezzanine.core.fields import FileField
 from mezzanine.core.managers import DisplayableManager
-from mezzanine.core.models import Displayable, RichText, Orderable
+from mezzanine.core.models import Displayable, RichText, Orderable, SiteRelated
 from mezzanine.generic.fields import RatingField
 from mezzanine.pages.models import Page
 from mezzanine.utils.models import AdminThumbMixin, upload_to
 
 from cartridge.shop import fields, managers
+from cartridge.shop.utils import clear_session
 
 
 class F(models.F):
@@ -132,6 +124,8 @@ class Product(Displayable, Priced, RichText, AdminThumbMixin):
     objects = DisplayableManager()
 
     admin_thumb_field = "image"
+
+    search_fields = {"variations__sku": 100}
 
     class Meta:
         verbose_name = _("Product")
@@ -416,7 +410,7 @@ class Category(Page, RichText):
         return products
 
 
-class Order(models.Model):
+class Order(SiteRelated):
 
     billing_detail_first_name = CharField(_("First name"), max_length=100)
     billing_detail_last_name = CharField(_("Last name"), max_length=100)
@@ -463,8 +457,8 @@ class Order(models.Model):
                       "discount_code", "tax_type", "tax_total")
 
     class Meta:
-        verbose_name = _("Order")
-        verbose_name_plural = _("Orders")
+        verbose_name = __("commercial meaning", "Order")
+        verbose_name_plural = __("commercial meaning", "Orders")
         ordering = ("-id",)
 
     def __unicode__(self):
@@ -509,9 +503,7 @@ class Order(models.Model):
         """
         self.save()  # Save the transaction ID.
         discount_code = request.session.get('discount_code')
-        for field in ("order",) + self.session_fields:
-            if field in request.session:
-                del request.session[field]
+        clear_session(request, "order", *self.session_fields)
         for item in request.cart:
             try:
                 variation = ProductVariation.objects.get(sku=item.sku)
@@ -580,7 +572,7 @@ class Cart(models.Model):
             item.category = variation.product.categories.first().slug
             image = variation.image
             if image is not None:
-                item.image = str(image.file)
+                item.image = force_text(image.file)
             #variation.product.actions.added_to_cart()
         item.quantity += quantity
         item.save()
@@ -625,6 +617,8 @@ class Cart(models.Model):
         """
         Returns the upsell products for each of the items in the cart.
         """
+        if not settings.SHOP_USE_UPSELL_PRODUCTS:
+            return []
         cart = Product.objects.filter(variations__sku__in=self.skus())
         published_products = Product.objects.published()
         for_cart = published_products.filter(upsell_products__in=cart)
@@ -817,33 +811,37 @@ class Sale(Discount):
             products = self.all_products()
             variations = ProductVariation.objects.filter(product__in=products)
             for priced_objects in (products, variations):
-                # MySQL will raise a 'Data truncated' warning here in
-                # some scenarios, presumably when doing a calculation
-                # that exceeds the precision of the price column. In
-                # this case it's safe to ignore it and the calculation
-                # will still be applied.
-                try:
-                    update = {"sale_id": self.id,
-                              "sale_price": sale_price,
-                              "sale_to": self.valid_to,
-                              "sale_from": self.valid_from}
+                update = {"sale_id": self.id,
+                          "sale_price": sale_price,
+                          "sale_to": self.valid_to,
+                          "sale_from": self.valid_from}
+                using = priced_objects.db
+                if "mysql" not in settings.DATABASES[using]["ENGINE"]:
                     priced_objects.filter(**extra_filter).update(**update)
-                except (OperationalError, DatabaseError):
+                else:
                     # Work around for MySQL which does not allow update
                     # to operate on subquery where the FROM clause would
-                    # have it operate on the same table.
-                    #
-                    # http://dev.mysql.com/
-                    # doc/refman/5.0/en/subquery-errors.html
+                    # have it operate on the same table, so we update
+                    # each instance individually:
+
+    # http://dev.mysql.com/doc/refman/5.0/en/subquery-errors.html
+
+                    # Also MySQL may raise a 'Data truncated' warning here
+                    # when doing a calculation that exceeds the precision
+                    # of the price column. In this case it's safe to ignore
+                    # it and the calculation will still be applied, but
+                    # we need to massage transaction management in order
+                    # to continue successfully:
+
+    # https://groups.google.com/forum/#!topic/django-developers/ACLQRF-71s8
+
                     for priced in priced_objects.filter(**extra_filter):
                         for field, value in list(update.items()):
                             setattr(priced, field, value)
                         try:
                             priced.save()
                         except Warning:
-                            pass
-                except Warning:
-                    pass
+                            connection.set_rollback(False)
 
     def delete(self, *args, **kwargs):
         """
