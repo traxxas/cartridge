@@ -254,7 +254,8 @@ class ProductVariation(with_metaclass(ProductVariationMetaclass, Priced)):
             self.save()
 
     def _color_slug(self):
-        return self.image.file.name[8:-9]
+        #return self.image.file.name[8:-9]
+        return self.image.file.name.split('/')[-1].replace('-med.jpg', '').replace('.png', '')[:-1]
     cslug = property(_color_slug)
 
 
