@@ -41,7 +41,7 @@ def recalculate_cart(request):
     cart is modified.
     """
     from cartridge.shop import checkout
-    from cartridge.shop.forms import DiscountForm
+    #from cartridge.shop.forms import DiscountForm
     from cartridge.shop.models import Cart
 
     # Rebind the cart to request since it's been modified.
@@ -49,15 +49,15 @@ def recalculate_cart(request):
         request.session['cart'] = request.cart.pk
     request.cart = Cart.objects.from_request(request)
 
-    discount_code = request.session.get("discount_code", "")
-    if discount_code:
+    #discount_code = request.session.get("discount_code", "")
+    #if discount_code:
         # Clear out any previously defined discount code
         # session vars.
-        names = ("free_shipping", "discount_code", "discount_total")
-        clear_session(request, *names)
-        discount_form = DiscountForm(request, {"discount_code": discount_code})
-        if discount_form.is_valid():
-            discount_form.set_discount()
+        #names = ("free_shipping", "discount_code", "discount_total")
+        #clear_session(request, *names)
+        #discount_form = DiscountForm(request, {"discount_code": discount_code})
+        #if discount_form.is_valid():
+        #    discount_form.set_discount()
 
     handler = lambda s: import_dotted_path(s) if s else lambda *args: None
     billship_handler = handler(settings.SHOP_HANDLER_BILLING_SHIPPING)
