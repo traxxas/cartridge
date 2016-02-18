@@ -26,12 +26,13 @@ from cartridge.shop.forms import (AddProductForm, CartItemFormSet,
 from cartridge.shop.models import Product, ProductVariation, Order
 from cartridge.shop.utils import recalculate_cart, sign
 
+from donum.models import GiftCode
+
 try:
     from xhtml2pdf import pisa
 except (ImportError, SyntaxError):
     pisa = None
 HAS_PDF = pisa is not None
-from donum.models import GiftCode
 
 
 # Set up checkout handlers.
