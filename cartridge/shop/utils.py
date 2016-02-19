@@ -48,7 +48,6 @@ def recalculate_cart(request):
     if request.session.get('cart') != request.cart.pk:
         request.session['cart'] = request.cart.pk
     request.cart = Cart.objects.from_request(request)
-
     #discount_code = request.session.get("discount_code", "")
     #if discount_code:
         # Clear out any previously defined discount code
