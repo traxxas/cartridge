@@ -258,6 +258,18 @@ class ProductVariation(with_metaclass(ProductVariationMetaclass, Priced)):
         return self.image.file.name.split('/')[-1].replace('-med.jpg', '').replace('.png', '')[:-1]
     cslug = property(_color_slug)
 
+    def to_dict(self):
+        """
+        Make it easier to export Products to json object for
+        GA Ecommerce event tracking
+        """
+        return {
+            u'id': self.sku,
+            u'name': self.product.title,
+            u'variant': '-'.join(str(self).split(' - ')[1:]),
+            u'category': self.product.categories.first().title,
+            u'price': str(self.sale_price if self.sale_price else self.unit_price),
+        }
 
     @models.permalink
     def get_absolute_url(self):
