@@ -628,7 +628,7 @@ class Cart(models.Model):
         items are accessories, sale, or peta
         """
         for item in self:
-            m = re.match(r'^(ties\/traditional)|(ties\/narrow)|(ties\/skinny)|(ties\/timeless)', item.category)
+            m = re.match(r'^(ties\/traditional)|(ties\/slim)|(ties\/skinny)|(ties\/timeless)', item.category)
             if m:
                 return 'tie'
         return 'acc'
