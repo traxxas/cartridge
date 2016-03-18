@@ -567,6 +567,9 @@ class Cart(models.Model):
 
     objects = managers.CartManager()
 
+    def __str__(self):
+        return "%s items $%s" % (self.total_quantity(), self.total_price())
+
     def __iter__(self):
         """
         Allow the cart to be iterated giving access to the cart's items,
@@ -622,17 +625,6 @@ class Cart(models.Model):
         """
         return [item.sku for item in self]
 
-    def ship_type(self):
-        """
-        Return shipping type: tie if any items is a tie or acc if all
-        items are accessories, sale, or peta
-        """
-        for item in self:
-            m = re.match(r'^(ties\/traditional)|(ties\/slim)|(ties\/skinny)|(ties\/timeless)', item.category)
-            if m:
-                return 'tie'
-        return 'acc'
-
     def upsell_products(self):
         """
         Returns the upsell products for each of the items in the cart.
@@ -682,7 +674,7 @@ class SelectedProduct(models.Model):
         abstract = True
 
     def __str__(self):
-        return ""
+        return "%ix %s" % (self.quantity, self.sku)
 
     def to_dict(self):
         """
