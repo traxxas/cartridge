@@ -249,14 +249,15 @@ class ProductVariation(with_metaclass(ProductVariationMetaclass, Priced)):
         if self.product.slug != self.slug:
             self.slug = self.product.slug
             self.save()
+        if not self.cslug:
+            self.cslug = self._color_slug()
+            self.save()
         if not self.sku:
             self.sku = self.id
             self.save()
 
     def _color_slug(self):
-        #return self.image.file.name[8:-9]
         return self.image.file.name.split('/')[-1].replace('-med.jpg', '').replace('.png', '')[:-1]
-    cslug = property(_color_slug)
 
     def to_dict(self):
         """
