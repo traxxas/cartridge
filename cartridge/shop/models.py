@@ -755,9 +755,9 @@ class Discount(models.Model):
 
     title = CharField(_("Title"), max_length=100)
     active = models.BooleanField(_("Active"), default=False)
-    products = models.ManyToManyField("Product", blank=True,
+    products = models.ManyToManyField("shop.Product", blank=True,
                                       verbose_name=_("Products"))
-    categories = models.ManyToManyField("Category", blank=True,
+    categories = models.ManyToManyField("shop.Category", blank=True,
                                         related_name="%(class)s_related",
                                         verbose_name=_("Categories"))
     discount_deduct = fields.MoneyField(_("Reduce by amount"))
