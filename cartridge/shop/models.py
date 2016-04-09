@@ -249,7 +249,7 @@ class ProductVariation(with_metaclass(ProductVariationMetaclass, Priced)):
         if self.product.slug != self.slug:
             self.slug = self.product.slug
             self.save()
-        if not self.cslug:
+        if not self.cslug and self.image:
             self.cslug = self._color_slug()
             self.save()
         if not self.sku:
