@@ -27,6 +27,13 @@ from cartridge.shop.models import Product, ProductVariation, Order
 from cartridge.shop.models import DiscountCode
 from cartridge.shop.utils import recalculate_cart, sign
 
+try:
+    from xhtml2pdf import pisa
+except (ImportError, SyntaxError):
+    pisa = None
+HAS_PDF = pisa is not None
+
+
 # Set up checkout handlers.
 handler = lambda s: import_dotted_path(s) if s else lambda *args: None
 billship_handler = handler(settings.SHOP_HANDLER_BILLING_SHIPPING)
