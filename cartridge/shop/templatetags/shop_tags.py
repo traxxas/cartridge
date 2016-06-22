@@ -38,7 +38,8 @@ def _order_totals(context):
     receipts, or the cart object for checkout.
     """
     fields = ["shipping_type", "shipping_total", "discount_total",
-              "tax_type", "tax_total"]
+              "tax_type", "tax_total", "discount_code", "discount_type",
+              "discount_remain"]
     template_vars = {}
 
     if "order" in context:
