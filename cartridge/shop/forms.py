@@ -130,17 +130,21 @@ class CartItemForm(forms.ModelForm):
     Model form for each item in the cart - used for the
     ``CartItemFormSet`` below which controls editing the entire cart.
     """
+    quantity = forms.IntegerField(label=_("Quantity"), min_value=0)
 
     quantity = forms.IntegerField(label=_("Quantity"), min_value=0)
 
     class Meta:
         model = CartItem
-        fields = ("quantity",)
+        fields = ('quantity',)
 
     def clean_quantity(self):
         """
         Validate that the given quantity is available.
         """
+        # GIftCode in cart, can only have a qty of 1, never out of stock
+        if 'JJGiftCard' in self.instance.sku:
+            return 1
         variation = ProductVariation.objects.get(sku=self.instance.sku)
         quantity = self.cleaned_data["quantity"]
         if not variation.has_stock(quantity - self.instance.quantity):

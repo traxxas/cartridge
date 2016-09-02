@@ -93,7 +93,8 @@ class CategoryAdmin(PageAdmin):
 # provide a single inline for managing the single variation per
 # product.
 variation_fields = ["sku", "num_in_stock", "unit_price",
-                    "sale_price", "sale_from", "sale_to", "image"]
+                    "sale_price", "primary", "pattern", "image", "msg"]
+                    #"sale_price", "sale_from", "sale_to", "image"]
 if settings.SHOP_USE_VARIATIONS:
     variation_fields.insert(1, "default")
     variations_max_num = None
@@ -103,7 +104,7 @@ else:
     variations_extra = 1
 
 
-class ProductVariationAdmin(admin.TabularInline):
+class ProductVariationAdmin(admin.StackedInline):
     verbose_name_plural = _("Current variations")
     model = ProductVariation
     fields = variation_fields
@@ -376,6 +377,6 @@ admin.site.register(Category, CategoryAdmin)
 admin.site.register(Product, ProductAdmin)
 if settings.SHOP_USE_VARIATIONS:
     admin.site.register(ProductOption, ProductOptionAdmin)
-admin.site.register(Order, OrderAdmin)
+#admin.site.register(Order, OrderAdmin)
 admin.site.register(Sale, SaleAdmin)
 admin.site.register(DiscountCode, DiscountCodeAdmin)

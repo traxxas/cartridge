@@ -2,6 +2,7 @@ from __future__ import division, unicode_literals
 from future.builtins import str, super
 from future.utils import with_metaclass
 
+import re
 from decimal import Decimal
 from functools import reduce
 from operator import iand, ior
@@ -160,6 +161,7 @@ class ProductImage(Orderable):
         upload_to=upload_to("shop.ProductImage.file", "product"))
     description = CharField(_("Description"), blank=True, max_length=100)
     product = models.ForeignKey("Product", related_name="images")
+    active = models.BooleanField(_("Active?"), default=True)
 
     class Meta:
         verbose_name = _("Image")
@@ -220,24 +222,23 @@ class ProductVariation(with_metaclass(ProductVariationMetaclass, Priced)):
     default = models.BooleanField(_("Default"), default=False)
     image = models.ForeignKey("ProductImage", verbose_name=_("Image"),
                               null=True, blank=True, on_delete=models.SET_NULL)
+    _order = models.PositiveIntegerField(_("Order"), null=True)
 
     objects = managers.ProductVariationManager()
 
     class Meta:
-        ordering = ("-default",)
+        ordering = ("-default", "_order")
 
     def __str__(self):
         """
         Display the option names and values for the variation.
         """
-        options = []
-        for field in self.option_fields():
-            name = getattr(self, field.name)
-            if name is not None:
-                option = u"%s: %s" % (field.verbose_name, name)
-                options.append(option)
-        result = u"%s %s" % (str(self.product), u", ".join(options))
-        return result.strip()
+        options = [str(self.product)]
+        if self.option2 and 'Skinny Cotton Ties' not in options[0]:
+            options.append(self.option2)
+        if self.option1:
+            options.append(u"%s Tipping" % self.option1)
+        return u" - ".join(options).strip()
 
     def save(self, *args, **kwargs):
         """
@@ -245,12 +246,36 @@ class ProductVariation(with_metaclass(ProductVariationMetaclass, Priced)):
         created.
         """
         super(ProductVariation, self).save(*args, **kwargs)
+        if self.product.slug != self.slug:
+            self.slug = self.product.slug
+            self.save()
+        if not self.cslug and self.image:
+            self.cslug = self._color_slug()
+            self.save()
         if not self.sku:
             self.sku = self.id
             self.save()
 
+    def _color_slug(self):
+        return self.image.file.name.split('/')[-1].replace('-med.jpg', '').replace('.png', '')[:-1]
+
+    def to_dict(self):
+        """
+        Make it easier to export Products to json object for
+        GA Ecommerce event tracking
+        """
+        return {
+            u'id': self.sku,
+            u'name': self.product.title,
+            u'variant': '-'.join(str(self).split(' - ')[1:]),
+            u'category': self.product.categories.first().title,
+            u'price': str(self.sale_price if self.sale_price else self.unit_price),
+        }
+
+    @models.permalink
     def get_absolute_url(self):
-        return self.product.get_absolute_url()
+        return ("specific_product", (), {"slug": self.slug,
+                                         "cslug": self.cslug})
 
     def validate_unique(self, *args, **kwargs):
         """
@@ -351,6 +376,7 @@ class Category(Page, RichText):
     class Meta:
         verbose_name = _("Product category")
         verbose_name_plural = _("Product categories")
+        ordering = ('-slug',)
 
     def filters(self):
         """
@@ -503,7 +529,7 @@ class Order(SiteRelated):
                 pass
             else:
                 variation.update_stock(item.quantity * -1)
-                variation.product.actions.purchased()
+                #variation.product.actions.purchased()
         if discount_code:
             DiscountCode.objects.active().filter(code=discount_code).update(
                 uses_remaining=models.F('uses_remaining') - 1)
@@ -542,6 +568,9 @@ class Cart(models.Model):
 
     objects = managers.CartManager()
 
+    def __str__(self):
+        return "%s items $%s" % (self.total_quantity(), self.total_price())
+
     def __iter__(self):
         """
         Allow the cart to be iterated giving access to the cart's items,
@@ -563,11 +592,12 @@ class Cart(models.Model):
         if created:
             item.description = force_text(variation)
             item.unit_price = variation.price()
-            item.url = variation.product.get_absolute_url()
+            item.url = variation.get_absolute_url()
+            item.category = variation.product.categories.first().slug
             image = variation.image
             if image is not None:
                 item.image = force_text(image.file)
-            variation.product.actions.added_to_cart()
+            #variation.product.actions.added_to_cart()
         item.quantity += quantity
         item.save()
 
@@ -608,7 +638,7 @@ class Cart(models.Model):
         with_cart_excluded = for_cart.exclude(variations__sku__in=self.skus())
         return list(with_cart_excluded.distinct())
 
-    def calculate_discount(self, discount):
+    def calculate_discount(self, discount, shipping):
         """
         Calculates the discount based on the items in a cart, some
         might have the discount, others might not.
@@ -616,7 +646,7 @@ class Cart(models.Model):
         # Discount applies to cart total if not product specific.
         products = discount.all_products()
         if products.count() == 0:
-            return discount.calculate(self.total_price())
+            return discount.calculate(self.total_price() + shipping)
         total = Decimal("0")
         # Create a list of skus in the cart that are applicable to
         # the discount, and total the discount for appllicable items.
@@ -645,7 +675,25 @@ class SelectedProduct(models.Model):
         abstract = True
 
     def __str__(self):
-        return ""
+        return "%ix %s" % (self.quantity, self.sku)
+
+    def to_dict(self):
+        """
+        Make it easier to export Order|CartItems to json object for
+        GA Ecommerce tracking
+        """
+        sku = 'JJGiftCard' if 'JJGiftCard' in self.sku else self.sku
+        try:
+            pv = ProductVariation.objects.get(sku=sku)
+        except ProductVariation.DoesNotExist:
+            return {}
+        return {
+            u'id': pv.sku,
+            u'name': pv.product.title,
+            u'category': pv.product.categories.first().title,
+            u'variant': '-'.join(str(pv).split(' - ')[1:]),
+            u'price': str(self.unit_price),
+            u'quantity': self.quantity,}
 
     def save(self, *args, **kwargs):
         """
@@ -677,7 +725,7 @@ class OrderItem(SelectedProduct):
     order = models.ForeignKey("Order", related_name="items")
 
 
-class ProductAction(models.Model):
+#class ProductAction(models.Model):
     """
     Records an incremental value for an action against a product such
     as adding to cart or purchasing, for sales reporting and
@@ -685,15 +733,15 @@ class ProductAction(models.Model):
     popularity and sales reporting.
     """
 
-    product = models.ForeignKey("Product", related_name="actions")
-    timestamp = models.IntegerField()
-    total_cart = models.IntegerField(default=0)
-    total_purchase = models.IntegerField(default=0)
+#    product = models.ForeignKey("Product", related_name="actions")
+#    timestamp = models.IntegerField()
+#    total_cart = models.IntegerField(default=0)
+#    total_purchase = models.IntegerField(default=0)
 
-    objects = managers.ProductActionManager()
+#    objects = managers.ProductActionManager()
 
-    class Meta:
-        unique_together = ("product", "timestamp")
+#    class Meta:
+#        unique_together = ("product", "timestamp")
 
 
 @python_2_unicode_compatible
@@ -707,9 +755,9 @@ class Discount(models.Model):
 
     title = CharField(_("Title"), max_length=100)
     active = models.BooleanField(_("Active"), default=False)
-    products = models.ManyToManyField("Product", blank=True,
+    products = models.ManyToManyField("shop.Product", blank=True,
                                       verbose_name=_("Products"))
-    categories = models.ManyToManyField("Category", blank=True,
+    categories = models.ManyToManyField("shop.Category", blank=True,
                                         related_name="%(class)s_related",
                                         verbose_name=_("Categories"))
     discount_deduct = fields.MoneyField(_("Reduce by amount"))
