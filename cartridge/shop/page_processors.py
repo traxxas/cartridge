@@ -14,12 +14,13 @@ def category_processor(request, page):
     """
     Add paging/sorting to the products for the category.
     """
-    settings.use_editable()
+    settings.clear_cache()
     products = Product.objects.published(for_user=request.user
                                 ).filter(page.category.filters()).distinct()
     sort_options = [(slugify(option[0]), option[1])
                     for option in settings.SHOP_PRODUCT_SORT_OPTIONS]
-    sort_by = request.GET.get("sort", sort_options[0][1])
+    sort_by = request.GET.get(
+        "sort", sort_options[0][1] if sort_options else '-date_added')
     products = paginate(products.order_by(sort_by),
                         request.GET.get("page", 1),
                         settings.SHOP_PER_PAGE_CATEGORY,

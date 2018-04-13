@@ -131,6 +131,8 @@ class CartItemForm(forms.ModelForm):
     ``CartItemFormSet`` below which controls editing the entire cart.
     """
 
+    quantity = forms.IntegerField(label=_("Quantity"), min_value=0)
+
     class Meta:
         model = CartItem
         fields = ("quantity",)
@@ -296,6 +298,8 @@ class OrderForm(FormsetForm, DiscountForm):
     checkout process with fields being hidden where applicable.
     """
 
+    use_required_attribute = False
+
     step = forms.IntegerField(widget=forms.HiddenInput())
     same_billing_shipping = forms.BooleanField(required=False, initial=True,
         label=_("My delivery details are the same as my billing details"))
@@ -353,7 +357,7 @@ class OrderForm(FormsetForm, DiscountForm):
 
         # Hide discount code field if it shouldn't appear in checkout,
         # or if no discount codes are active.
-        settings.use_editable()
+        settings.clear_cache()
         if not (settings.SHOP_DISCOUNT_FIELD_IN_CHECKOUT and
                 DiscountCode.objects.active().exists()):
             self.fields["discount_code"].widget = forms.HiddenInput()
