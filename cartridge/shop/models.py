@@ -270,7 +270,7 @@ class ProductVariation(with_metaclass(ProductVariationMetaclass, Priced)):
             self.save()
 
     def _color_slug(self):
-        return self.image.file.name.split('/')[-1].replace('-med.jpg', '').replace('.png', '')[:-1]
+        return self.image.file.name.split('/')[-1].replace('-med.jpg', '').replace('.png', '').replace('.jpg', '')[:-1]
 
     def to_dict(self):
         """
