@@ -205,8 +205,8 @@ class ProductOption(models.Model):
         return "%s: %s" % (self.get_type_display(), self.name)
 
     class Meta:
-        verbose_name = _("Product option")
-        verbose_name_plural = _("Product options")
+        verbose_name = _("Product Option")
+        verbose_name_plural = _("Product Options")
 
 
 class ProductVariationMetaclass(ModelBase):
@@ -930,5 +930,5 @@ class DiscountCode(Discount):
         return 0
 
     class Meta:
-        verbose_name = _("Discount code")
-        verbose_name_plural = _("Discount codes")
+        verbose_name = _("Discount Code")
+        verbose_name_plural = _("Discount Codes")
