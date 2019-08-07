@@ -240,7 +240,7 @@ class ProductVariation(with_metaclass(ProductVariationMetaclass, Priced)):
     objects = managers.ProductVariationManager()
 
     class Meta:
-        ordering = ("-default", "_order")
+        ordering = ("-default", "_order", "option1")
 
     def __str__(self):
         """
